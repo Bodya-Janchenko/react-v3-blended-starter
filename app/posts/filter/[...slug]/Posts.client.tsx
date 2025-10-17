@@ -1,41 +1,50 @@
 'use client';
 
-import { useState } from 'react';
+import css from './page.module.css';
+
+import { useEffect, useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { useDebouncedCallback } from 'use-debounce';
+import { useDebounce, useDebouncedCallback } from 'use-debounce';
+import { Post } from '@/types/post';
+import { fetchPosts } from '@/lib/api';
+
+import toast, { Toaster } from 'react-hot-toast';
 import PostList from '@/components/PostList/PostList';
 import SearchBox from '@/components/SearchBox/SearchBox';
 import Pagination from '@/components/Pagination/Pagination';
-import { fetchPosts } from '@/lib/api';
-
-import css from './page.module.css';
 import Modal from '@/components/Modal/Modal';
-import { Post } from '@/types/post';
 import EditPostForm from '@/components/EditPostForm/EditPostForm';
 import CreatePostForm from '@/components/CreatePostForm/CreatePostForm';
 
 interface PostsClientProps {
-  initialData: { posts: Post[]; totalCount: number };
-  userId: string;
+  userId: string | undefined;
 }
 
-export default function PostsClient({ initialData, userId }: PostsClientProps) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+export default function PostsClient({ userId }: PostsClientProps) {
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editedPost, setEditedPost] = useState<Post | null>(null);
 
-  const { data } = useQuery({
-    queryKey: ['posts', searchQuery, currentPage, userId],
+  const [debounceSearchQuery] = useDebounce(searchQuery, 300);
+
+  const { data, isError, error } = useQuery({
+    queryKey: ['posts', debounceSearchQuery, currentPage, userId],
     queryFn: () =>
       fetchPosts({
-        searchText: searchQuery,
+        searchText: debounceSearchQuery,
         page: currentPage,
         ...(userId !== 'All' && { userId }),
       }),
     placeholderData: keepPreviousData,
-    initialData,
   });
+
+  useEffect(() => {
+    if (isError && error) {
+      toast.error(`Oops, something went wrong while get the posts.`);
+      console.log(`Something went wrong while get the posts: ${error}`);
+    }
+  }, [isError, error]);
 
   const toggleModal = () => setIsModalOpen((prev) => !prev);
 
@@ -49,11 +58,12 @@ export default function PostsClient({ initialData, userId }: PostsClientProps) {
     setSearchQuery(newQuery);
   }, 300);
 
-  const totalPages = Math.ceil(data.totalCount / 8);
+  const totalPages = Math.ceil((data?.totalCount ?? 0) / 8);
   const posts = data?.posts ?? [];
 
   return (
     <div className={css.app}>
+      <Toaster position="top-right" reverseOrder={false} />
       <main className={css.main}>
         <section className={css.postsSection}>
           <header className={css.toolbar}>
