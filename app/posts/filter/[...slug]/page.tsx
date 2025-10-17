@@ -3,11 +3,11 @@ import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query
 import PostsClient from './Posts.client';
 
 interface PostsPageProps {
-  params: Promise<{ slug: string[] }>;
+  params: { slug: string[] };
 }
 
 const PostsPage = async ({ params }: PostsPageProps) => {
-  const { slug } = await params;
+  const { slug } = params;
   const userId = slug?.[0]?.toLowerCase() === 'all' ? undefined : slug?.[0];
   const queryClient = new QueryClient();
 
@@ -30,8 +30,8 @@ const PostsPage = async ({ params }: PostsPageProps) => {
 
 export default PostsPage;
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string[] }> }) {
-  const resolvedParams = await params;
+export async function generateMetadata({ params }: { params: { slug: string[] } }) {
+  const resolvedParams = params;
   const slug = resolvedParams.slug;
   const userId = slug?.[0]?.toLowerCase() === 'all' ? undefined : slug[0];
 
