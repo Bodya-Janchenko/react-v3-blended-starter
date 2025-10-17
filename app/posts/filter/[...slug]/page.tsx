@@ -3,7 +3,7 @@ import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query
 import PostsClient from './Posts.client';
 
 interface PostsPageProps {
-  params: { slug: string[] };
+  params: Promise<{ slug: string[] }>;
 }
 
 const PostsPage = async ({ params }: PostsPageProps) => {
